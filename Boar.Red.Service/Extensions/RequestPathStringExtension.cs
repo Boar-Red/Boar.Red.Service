@@ -1,0 +1,13 @@
+﻿namespace Boar.Red.Service.Extensions;
+
+public static class RequestPathStringExtension
+{
+	////////////////////////////////////////////////
+	// @自身属性
+	////////////////////////////////////////////////
+
+	#region 自身属性
+
+
+	#endregion
+}

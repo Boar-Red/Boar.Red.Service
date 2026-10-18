@@ -1,0 +1,25 @@
+﻿namespace Boar.Red.Service.Constants;
+
+public class CookieNames
+{
+	////////////////////////////////////////////////
+	// @ServiceAdmin
+	////////////////////////////////////////////////
+
+	#region ServiceAdmin
+
+	public class ServiceAdministrator
+	{
+		////////////////////////////////////////////////
+		// @静态常量
+		////////////////////////////////////////////////
+
+		#region 静态常量
+
+		public const string SessionToken = "BrService-Administrator-Session-Token";
+
+		#endregion
+	}
+
+	#endregion
+}

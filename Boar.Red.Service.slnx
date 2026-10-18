@@ -1,0 +1,28 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Debug_IIS" />
+    <BuildType Name="Debug_Kestrel" />
+    <BuildType Name="Release" />
+    <BuildType Name="Release_IIS" />
+    <BuildType Name="Release_Kestrel" />
+  </Configurations>
+  <Project Path="Boar.Red.Service.Test.NetCoreMvc/Boar.Red.Service.Test.NetCoreMvc.csproj">
+    <BuildType Solution="Debug_IIS|*" Project="Debug" />
+    <BuildType Solution="Debug_Kestrel|*" Project="Debug" />
+    <BuildType Solution="Release_IIS|*" Project="Release" />
+    <BuildType Solution="Release_Kestrel|*" Project="Release" />
+  </Project>
+  <Project Path="Boar.Red.Service.Test/Boar.Red.Service.Test.csproj">
+    <BuildType Solution="Debug_IIS|*" Project="Debug" />
+    <BuildType Solution="Debug_Kestrel|*" Project="Debug" />
+    <BuildType Solution="Release_IIS|*" Project="Release" />
+    <BuildType Solution="Release_Kestrel|*" Project="Release" />
+  </Project>
+  <Project Path="Boar.Red.Service/Boar.Red.Service.csproj">
+    <BuildType Solution="Debug_IIS|*" Project="Debug" />
+    <BuildType Solution="Debug_Kestrel|*" Project="Debug" />
+    <BuildType Solution="Release_IIS|*" Project="Release" />
+    <BuildType Solution="Release_Kestrel|*" Project="Release" />
+  </Project>
+</Solution>

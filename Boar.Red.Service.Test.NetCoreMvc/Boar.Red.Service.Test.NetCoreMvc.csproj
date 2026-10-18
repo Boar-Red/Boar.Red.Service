@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Boar_Red_600x600@1x.ico</ApplicationIcon>
+    <PackageId>____服务完整名称____</PackageId>
+    <Version>8.0.10</Version>
+    <PackageIcon>Boar_Red_600x600@1x.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <AssemblyVersion>8.0.10</AssemblyVersion>
+    <FileVersion>8.0.10</FileVersion>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Views\**" />
+    <Content Remove="Views\**" />
+    <EmbeddedResource Remove="Views\**" />
+    <None Remove="Views\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Boar_Red_600x600@1x.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="BaoXia.Constants" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Boar_Red_600x600%401x.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Boar.Red.Service\Boar.Red.Service.csproj" />
+  </ItemGroup>
+
+</Project>

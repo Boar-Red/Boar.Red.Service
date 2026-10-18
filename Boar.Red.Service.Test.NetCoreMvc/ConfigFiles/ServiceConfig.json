@@ -1,0 +1,333 @@
+{
+	////////////////////////////////////////////////
+	// TestNetCoreMvctConfig配置信息：
+	////////////////////////////////////////////////
+
+	"TestNetCoreMvctConfigConfig":
+	{
+		// 自身业务相关配置：
+		// "Xxxx": "xxx",
+
+
+		// 1.a/4，配置服务客户端：数据库，连接字符串
+		"DbConnectionString": "Server=____数据库服务器地址____;Database=____数据库名称____;user id=____数据库用户账号____;password=____数据库用户密码____;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=true;",
+
+		// 1.b/4，配置服务客户端：数据库，操作配置。
+		"DbOperationConfig":
+		{
+			"LoadThreadsCount": 10,
+			"LoadPageSize": 1000,
+
+			"SaveThreadsCount": 10,
+			"SaveQueueLengthSecondsMaxThreshold": 1.0
+		},
+
+		// 2/4，配置服务客户端：缓存服务：
+		"BxCacheServiceClientConfig":
+		{
+			// 指定的服务节点Uri，例如：ws://127.0.0.1:7000
+			"ServiceUri": null,
+			// 当前应用程序，登录服务使用的Id，例如：baoxia.service.user
+			"ApplicationIdentity": "____缓存服务账号____",
+			// 当前应用程序，登录服务使用的密码。
+			"ApplicationPassword": "____缓存服务密码____",
+
+			// Api响应接收缓存区大小，单位为：字节，填“0”时，使用系统默认值。
+			"ApiResponseReceiveBufferSizeInByte": 0,
+			// 客户端连接的默认超时，单位为：秒，填“0”时，使用系统默认值。
+			"ClientConnectionOpenTimeoutSeconds": 0,
+			// 客户端请求数据包需要启用压缩的最小尺寸值，单位为：字节，填“0”时，使用系统默认值。
+			"ClientRequestDataPacketSizeToCompression": 0,
+			// 客户端请求数据包的压缩算法名称，填“null”时，使用系统默认值。
+			"ClientRequestDataPacketCompressionMethodName": null,
+			// 客户端请求的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，填“null”时，使用系统默认值。
+			"ClientRequestTextEncodingName": "UTF-8",
+			// 服务端响应的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，填“null”时，使用系统默认值。
+			"ServiceResponseTextEncodingName": "UTF-8",
+			// Socket连接心跳包的发送间隔，单位为：秒，填“0”时，使用系统默认值。
+			"SocketConnectionHeartbeatIntervalSeconds": 0,
+			// 处理Api响应的线程数，填“0”时，使用系统默认值。
+			"ResponseProcessThreadsCountMax": 0,
+			// 请求统计的保存时长，单位为：秒数，“0”为不收集保留统计信息。
+			"RequestStatisticsInLiveSeconds": 0
+		},
+
+		// 3/4，配置服务客户端：令牌服务：
+		"BxTokenManagerClientConfig":
+		{
+			// 用户令牌缓存的有效时长：604800秒，一周。
+			"UserTokenCacheLiveSeconds": null,
+
+			// 指定的服务节点Uri，例如：ws://127.0.0.1:7000
+			"ServiceUri": null,
+			// 当前应用程序，登录服务使用的Id，例如：baoxia.service.user
+			"ApplicationIdentity": "baoxia.service",
+			// 当前应用程序，登录服务使用的密码。
+			"ApplicationPassword": "123456",
+
+			// Api响应接收缓存区大小，单位为：字节，填“0”时，使用系统默认值。
+			"ApiResponseReceiveBufferSizeInByte": 0,
+			// 客户端连接的默认超时，单位为：秒，填“0”时，使用系统默认值。
+			"ClientConnectionOpenTimeoutSeconds": 0,
+			// 客户端请求数据包需要启用压缩的最小尺寸值，单位为：字节，填“0”时，使用系统默认值。
+			"ClientRequestDataPacketSizeToCompression": 0,
+			// 客户端请求数据包的压缩算法名称，填“null”时，使用系统默认值。
+			"ClientRequestDataPacketCompressionMethodName": null,
+			// 客户端请求的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，填“null”时，使用系统默认值。
+			"ClientRequestTextEncodingName": "UTF-8",
+			// 服务端响应的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，填“null”时，使用系统默认值。
+			"ServiceResponseTextEncodingName": "UTF-8",
+			// Socket连接心跳包的发送间隔，单位为：秒，填“0”时，使用系统默认值。
+			"SocketConnectionHeartbeatIntervalSeconds": 0,
+			// 处理Api响应的线程数，填“0”时，使用系统默认值。
+			"ResponseProcessThreadsCountMax": 0,
+			// 请求统计的保存时长，单位为：秒数，“0”为不收集保留统计信息。
+			"RequestStatisticsInLiveSeconds": 0
+		},
+
+		// 4/4，配置服务客户端：用户服务:
+		"BxUserServiceClientConfig":
+		{
+			// 用户信息缓存的有效时长：604800秒，一周。
+			"UserCacheLiveSeconds": 604800.0,
+
+			// 指定的服务节点Uri，例如：ws://127.0.0.1:7000
+			"ServiceUri": null,
+			// 当前应用程序，登录服务使用的Id，例如：baoxia.service.user
+			"ApplicationIdentity": "baoxia.service",
+			// 当前应用程序，登录服务使用的密码。
+			"ApplicationPassword": "123456",
+
+			// Api响应接收缓存区大小，单位为：字节，填“0”时，使用系统默认值。
+			"ApiResponseReceiveBufferSizeInByte": 0,
+			// 客户端连接的默认超时，单位为：秒，填“0”时，使用系统默认值。
+			"ClientConnectionOpenTimeoutSeconds": 0,
+			// 客户端请求数据包需要启用压缩的最小尺寸值，单位为：字节，填“0”时，使用系统默认值。
+			"ClientRequestDataPacketSizeToCompression": 0,
+			// 客户端请求数据包的压缩算法名称，填“null”时，使用系统默认值。
+			"ClientRequestDataPacketCompressionMethodName": null,
+			// 客户端请求的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，填“null”时，使用系统默认值。
+			"ClientRequestTextEncodingName": "UTF-8",
+			// 服务端响应的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，填“null”时，使用系统默认值。
+			"ServiceResponseTextEncodingName": "UTF-8",
+			// Socket连接心跳包的发送间隔，单位为：秒，填“0”时，使用系统默认值。
+			"SocketConnectionHeartbeatIntervalSeconds": 0,
+			// 处理Api响应的线程数，填“0”时，使用系统默认值。
+			"ResponseProcessThreadsCountMax": 0,
+			// 请求统计的保存时长，单位为：秒数，“0”为不收集保留统计信息。
+			"RequestStatisticsInLiveSeconds": 0
+		}
+	},
+
+	////////////////////////////////////////////////
+	// 服务管理员配置：
+	////////////////////////////////////////////////
+
+	"ServiceAdministratorConfig":
+	{
+		// 可信任的管理客户端IP白名单：
+		"AdministratorIPAddresses":
+		[
+		],
+
+		// 管理员账号信息：
+		"Administrators":
+		[
+			{
+				"Account": "Admin",
+				"Password": "admin",
+				"EMail": "admin@admin.com",
+				"ExpireTime": "2099-02-27T16:00:00+00:00",
+				"Remark": ""
+			}
+		],
+
+		// 单次会话有效时长（秒数）：
+		"SessionRetainSeconds": 3600.0
+	},
+
+	////////////////////////////////////////////////
+	// Web服务配置参数：
+	////////////////////////////////////////////////
+	"WebServiceConfig":
+	{
+		// Http协议绑定的IP地址。
+		"HttpIPAddress": "127.0.0.1",
+		// Http协议端口号，通常：服务管理器使用起始端口“7001”，
+		// 基础服务使用后续递增的端口，如：7001 +，
+		// 业务服务使用新的IP地址段，如：8001，
+		// Api路由服务使用使用默认的“80”，“443”端口。
+		"HttpPort": 8001,
+
+		// Https协议绑定的IP地址。
+		"HttpsIPAddress": null,
+		// Https协议端口号。
+		"HttpsPort": 0,
+		// Https证书地址。
+		"HttpsCertificateFilePath": null,
+		// Https证书密码。
+		"HttpCertificatePassword": null,
+		// 是否Https为必须，默认为：false。
+		"IsHttpsNecessary": false,
+
+		// 用于Http请求的，跨域控制信息。
+		"HttpCrossDomainControlInfo":
+		{
+			// 支持模糊匹配符号： * 。
+			"Access_Control_Allow_Origins":
+			[
+				"*"
+			],
+			// 请求，允许的请求方法字符串，会直接返回给客户端的“OPTION”请求，
+			// 以英文逗号分隔的请求方法名，如：POST,GET。
+			"Access_Control_Allow_Methods": "POST,GET,OPTIONS,HEAD,DELETE",
+			// 请求，允许的HTTP头部参数，会直接返回给客户端的“OPTION”请求。
+			"Access_Control_Allow_Headers": "Accept,Accept-Language,Content-Language,Content-Type,X-Custom-Header,Cookie,User-Agent",
+			// 请求，是否使用凭证进行实际请求。
+			"Access_Control_Allow_Credentials": true
+		},
+
+		// 用于WebSocket请求的，跨域控制信息，注意：可信任的来源域名数组，不支持模糊匹配。
+		"WebSocketCrossDomainControlInfo":
+		{
+			// 【不】支持模糊匹配符号： * 。
+			"Access_Control_Allow_Origins":
+			[
+			]
+		},
+
+		// RequestBody大小的最大值，单位为“MB”，
+		// “<=0”表示不限制请求内容长度。
+		"HttpRequestBodySizeInMBMax": 0
+	},
+
+	////////////////////////////////////////////////
+	// 长连接服务配置参数：
+	////////////////////////////////////////////////
+	"BrServiceConfig":
+	{
+		// 服务信息：
+		"ServiceInfo":
+		{
+			// 服务分组名称。
+			"GroupName": "____服务所属分组名称____",
+
+			// 服务名称。
+			"ServiceName": "____服务完整名称____",
+
+			// 服务信息描述。
+			"Description": "____服务信息描述（中文名）____",
+
+			// 服务版本号。
+			"ServiceVersion": "1.0.0",
+
+			// 服务更新时间。
+			"ServiceUpdateTime": "2023-10-06T08:00:00.000+08",
+
+			// 节点名称。
+			"NodeName": "node1"
+
+		},
+
+		// 服务发现配置。
+		"ServiceDiscovererConfig":
+		{
+			// 是否禁用服务发现器。
+			"IsDisable": false,
+
+			// 服务发现器的监听端口号,
+			// 同一服务组，如果使用统一该端口号，
+			// 可以不填写服务地址，而通过服务自动发现功能，
+			// 发现新的服务节点。
+			"ListenPort": 6000,
+
+			// 服务发现器，广播服务信息的间隔秒数。
+			"BroadcastIntervalSeconds": 1.0,
+
+			// 发现服务的超时秒数，默认为：10.0 秒。
+			"ServiceFindTimeoutSeconds": 10.0,
+
+			// 服务发现器，发送功能数据包的最大任务数，
+			// 通过限制最大任务数，可规避发送频繁带来的性能问题。
+			"MaxTasksCountToSendDataPacket": 1,
+
+			// 服务发现器，从服务管理器更新服务节点信息的最大任务数，
+			// 通过限制最大任务数，可规避更新频繁带来的性能问题。
+			"MaxTasksCountToUpdateServiceNodeInfesFromServiceManager": 1,
+
+			// 指定的服务管理器地址，如果指定了地址，则不会进行服务信息广播。
+			"ServiceManagerAddress": null,
+
+			// 指定的服务管理器端口号，【重要】必须填写正确，
+			// 以便于服务发现器能够从服务管理器更新服务节点信息。
+			"ServiceManagerDiscoveryListenPort": 6000
+		},
+
+		// 会话登录的超时秒数，建立连接后，如果在指定的秒数内没有进行登录，则中断连接。
+		"ClientConnectionOpenTimeoutSeconds": 1000.0,
+
+		// 保持服务连接的心跳包间隔秒数，用于控制连接的状态变化敏感度。
+		"KeepAliveIntervalSeconds": 1.0,
+
+		// 应用程序请求接收缓冲区长度，单位为：字节。
+		"ApplicationRequestReceiveBufferSizeInByte": 1024,
+
+		// 客户端请求数据的默认编码名称，可选值为：ASCII，UTF-8，UTF-32，默认为： UTF-8。
+		"ClientRequestTextEncodingName": "utf-8",
+
+		// 响应数据编码名称，可选值为：ASCII，UTF-8，UTF-32，默认为： UTF-8。
+		"ServiceResponseTextEncodingName": "utf-8",
+
+		// 服务关机的超时秒数，如果在指定的秒数内没有安全关机，则进行强制关机，默认为：10 秒。
+		"ServiceShutdownTimeoutSeconds": 10.0,
+
+		// Socket连接心跳包的间隔秒数，间隔时间是指当前与业务数据的发送&接收时间的间隔。
+		"SocketConnectionHeartbeatIntervalSeconds": 10.0,
+
+		// 请求处理线程数最大值，“0”为不限制。
+		"RequestProcessThreadsCountMax": 0,
+
+		// 响应发送异常的处理方式名称，默认为：“Ignore”，忽略。
+		"ResponseSendExceptionActionName": "Ignore",
+
+		// 客户端发送请求时，数据包进行压缩的最小字节数，“0”为用于不压缩：
+		"ClientRequestDataPacketSizeToCompression": 100,
+
+		// 客户端发送请求时，数据包的压缩算法名称，默认为：“Brotli”。
+		"ClientRequestDataPacketCompressionMethodName": null,
+
+		// 服务端发送请求时，数据包进行压缩的最小字节数，“0”为用于不压缩：
+		"ServiceResponseDataPacketSizeToCompression": 100,
+
+		// 服务端发送请求时，数据包的压缩算法名称，默认为：“Brotli”。
+		"ServiceResponseDataPacketCompressionMethodName": null,
+
+		// 请求统计的保存时长，单位为：秒数，“0”为不收集保留统计信息。
+		"RequestStatisticsInLiveSeconds": 3600.0,
+
+		// 服务设计的满载RPS值，用于默认的负载率计算。
+		"RPSForFullLoadRate": 5000,
+
+		// 内置Http客户端的请求超时秒数，默认为：1.0 秒。
+		"HttpClientRequestTimeoutSeconds": 1.0,
+
+		////////////////////////////////////////////////
+		// 应用程序配置相关：
+		////////////////////////////////////////////////
+
+		"ApplicationInfes":
+		[
+			// "____客户端账号信息____",
+			{
+				//  客户端应用程序Id。
+				"ApplicationIdentity": "客户端应用程序Id",
+				// 客户端应用程序密码。
+				"Password": "客户端应用程序密码",
+				// 客户端应用程序连接数最大值，填“0”时表示不限制连接数量。
+				"ConnectionsCountMax": 0,
+				// 客户端登录信息的过期时间。
+				"ExpireTime": "2023-12-31T00:00:00.000Z"
+			}
+		]
+	}
+}
