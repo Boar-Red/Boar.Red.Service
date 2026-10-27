@@ -8,6 +8,7 @@ using Boar.Red.Service.Attributes;
 using Boar.Red.Service.BrService.Interfaces;
 using Boar.Red.Service.BrService.Middlewares;
 using Boar.Red.Service.BrService.ViewModels;
+using Boar.Red.Service.WebService.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -162,8 +163,8 @@ public abstract class WebSocketService<TRequestParam, TResponseParam>(string? re
 				return;
 			}
 			//
-			await WebSocket.SendAsync(
-				responseStringBytes, WebSocketMessageType.Text, true, _webSocketSendCancellationTokenSource.Token);
+			await WebSocket.SendWithTimeoutAsync(responseStringBytes, WebSocketMessageType.Text, true,
+				BrServiceMiddleware.WebServiceConfig.WebSocketSendTimeoutSeconds, _webSocketSendCancellationTokenSource.Token);
 			//
 		});
 	}
@@ -554,8 +555,8 @@ public abstract class WebSocketService<TRequestParam, TResponseParam>(string? re
 				// !!!
 				await WillDiscountWebSocketInHttpContextAsync(httpContext, webSocket, webSocketCloseInfo);
 				// !!!
-				await webSocket.CloseAsync(webSocketCloseInfo.WebSocketCloseStatus, webSocketCloseInfo.WebSocketCloseDescription,
-					CancellationToken.None);
+				await webSocket.CloseWithTimeoutAsync(webSocketCloseInfo.WebSocketCloseStatus, webSocketCloseInfo.WebSocketCloseDescription,
+					BrServiceMiddleware.WebServiceConfig.WebSocketCloseTimeoutSeconds, httpContext.RequestAborted);
 				// !!!
 				await DidDiscountWebSocketInHttpContextAsync(httpContext, webSocket, webSocketCloseInfo);
 				// !!!

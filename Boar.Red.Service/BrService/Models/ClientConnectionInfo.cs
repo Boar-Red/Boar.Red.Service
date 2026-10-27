@@ -6,6 +6,7 @@ using Boar.Red.Service.BrService.Extensions;
 using Boar.Red.Service.BrService.Middlewares;
 using Boar.Red.Service.BrService.Models.StatisticsInfo;
 using Boar.Red.Service.Utils;
+using Boar.Red.Service.WebService.Extensions;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
@@ -534,12 +535,8 @@ public class ClientConnectionInfo
 						apiResponseInfo.ServiceRequestPipeTimeInfo?.SetTime_6_ToSendResponseBytesBegin();
 						// ⏱⏱⏱，【计时埋点】
 						////////////////////////////////////////////////
-						await webSocket.SendAsync(
-						    dataPacketBytes,
-						    dataPacket.WebSocketMessageType,
-						    true,
-						    //
-						    CancellationTokenSource.Token);
+						await webSocket.SendWithTimeoutAsync(dataPacketBytes, dataPacket.WebSocketMessageType, true,
+							service.WebServiceConfig.WebSocketSendTimeoutSeconds, CancellationTokenSource.Token);
 						////////////////////////////////////////////////
 						// ⏱⏱⏱，【计时埋点】
 						var now = DateTime.Now;
