@@ -20,8 +20,11 @@ CI 按兄弟目录布局检出源码：当前仓库使用触发检查的提交�
 dotnet restore Boar.Red.Service.slnx
 dotnet build Boar.Red.Service.slnx -c Release --no-restore
 dotnet test Boar.Red.Service.Test/Boar.Red.Service.Test.csproj -c Release --no-build --no-restore
+dotnet run --project tests/Boar.Red.Service.MemoryTests/Boar.Red.Service.MemoryTests.csproj -c Release --no-build --no-restore
 dotnet list Boar.Red.Service.slnx package --vulnerable --include-transitive --no-restore
 ```
+
+内存回归检查单独执行控制器作用域、请求统计过期和 WebSocket 超时场景，包括连续 1000 次调用后的对象回收，以及随机本机端口上的真实 Ping/Pong 保活。检查不读取业务配置、不连接数据库或启动服务发现；运行方式见 [回归检查说明](../tests/Boar.Red.Service.MemoryTests/README.md)。
 
 核心库的快速单元测试在两个系统上运行。网关工具测试包含 Windows 可执行文件路径，仅在 Windows 任务中运行。没有对应标准单元测试的宿主只执行构建与依赖检查；缓存控制台测试、需要外部端点的网关集成测试和压力测试需要单独准备环境，不在此 CI 中启动。管理 UI 使用仓库随附的静态产物，CI 不需要闭源 UI 工程。
 

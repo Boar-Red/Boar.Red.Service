@@ -25,4 +25,10 @@
     <BuildType Solution="Release_IIS|*" Project="Release" />
     <BuildType Solution="Release_Kestrel|*" Project="Release" />
   </Project>
+  <Project Path="tests/Boar.Red.Service.MemoryTests/Boar.Red.Service.MemoryTests.csproj">
+    <BuildType Solution="Debug_IIS|*" Project="Debug" />
+    <BuildType Solution="Debug_Kestrel|*" Project="Debug" />
+    <BuildType Solution="Release_IIS|*" Project="Release" />
+    <BuildType Solution="Release_Kestrel|*" Project="Release" />
+  </Project>
 </Solution>

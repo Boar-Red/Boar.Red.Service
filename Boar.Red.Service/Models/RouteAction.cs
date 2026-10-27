@@ -1,12 +1,18 @@
-﻿namespace Boar.Red.Service.Models
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace Boar.Red.Service.Models
 {
-	public class RouteAction : IDisposable
+	public class RouteAction : IDisposable, IAsyncDisposable
 	{
 		////////////////////////////////////////////////
 		// @自身属性
 		////////////////////////////////////////////////
 
 		#region 自身属性
+
+		private readonly IServiceScope? _serviceScope;
+
+		private int _isDisposed;
 
 		public RouteInfo RouteInfo { get; set; }
 
@@ -47,12 +53,10 @@
 			Controller = controller;
 		}
 
-		~RouteAction()
+		public RouteAction(RouteInfo routeInfo, object controller, IServiceScope serviceScope)
+			: this(routeInfo, controller)
 		{
-			if (Controller is IDisposable disposableController)
-			{
-				disposableController.Dispose();
-			}
+			_serviceScope = serviceScope;
 		}
 
 		#endregion
@@ -66,14 +70,45 @@
 
 		public void Dispose()
 		{
-			if (Controller is IDisposable disposableController)
+			if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
+			{
+				return;
+			}
+			if (_serviceScope != null)
+			{
+				// 控制器由作用域管理，不能再单独释放一次。
+				_serviceScope.Dispose();
+			}
+			else if (Controller is IDisposable disposableController)
 			{
 				disposableController.Dispose();
 			}
-
-			////////////////////////////////////////////////
 			GC.SuppressFinalize(this);
-			////////////////////////////////////////////////
+		}
+
+		public async ValueTask DisposeAsync()
+		{
+			if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
+			{
+				return;
+			}
+			if (_serviceScope is IAsyncDisposable asyncScope)
+			{
+				await asyncScope.DisposeAsync();
+			}
+			else if (_serviceScope != null)
+			{
+				_serviceScope.Dispose();
+			}
+			else if (Controller is IAsyncDisposable asyncController)
+			{
+				await asyncController.DisposeAsync();
+			}
+			else if (Controller is IDisposable disposableController)
+			{
+				disposableController.Dispose();
+			}
+			GC.SuppressFinalize(this);
 		}
 
 		#endregion

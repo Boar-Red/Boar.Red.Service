@@ -20,10 +20,12 @@ using Boar.Red.Service.Models;
 using Boar.Red.Service.Services;
 using Boar.Red.Service.Utils;
 using Boar.Red.Service.ViewModels;
+using Boar.Red.Service.WebService.Extensions;
 using Boar.Red.Service.WebService.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Reflection;
@@ -868,7 +870,7 @@ public class BrServiceMiddleware : MiddlewareAsync
 	internal void AddServiceRequestPipeTimeInfo(
 		ServiceRequestPipeTimeInfo? requestPipeTimeInfo, RequestPipeType requestPipeTypeSpecified = RequestPipeType.Unknown)
 	{
-		if (requestPipeTimeInfo == null)
+		if (requestPipeTimeInfo == null || Config.RequestStatisticsInLiveSeconds <= 0)
 		{
 			return;
 		}
@@ -1125,6 +1127,11 @@ public class BrServiceMiddleware : MiddlewareAsync
 
 	protected RouteAction? GetRouteActionWithRequestUriPath(string? requestUriPath)
 	{
+		return GetRouteActionWithRequestUriPathAsync(requestUriPath).AsTask().GetAwaiter().GetResult();
+	}
+
+	protected async ValueTask<RouteAction?> GetRouteActionWithRequestUriPathAsync(string? requestUriPath)
+	{
 		if (string.IsNullOrEmpty(requestUriPath))
 		{
 			return null;
@@ -1156,16 +1163,30 @@ public class BrServiceMiddleware : MiddlewareAsync
 			return null;
 		}
 
-		var controller =
-			BaoXia.Utils.Environment.ApplicationBuilder?.ApplicationServices.GetService(
-				controllerType
-			);
-		if (controller == null)
+		var scope = BaoXia.Utils.Environment.CreateServiceScope();
+		if (scope == null)
 		{
 			return null;
 		}
-
-		return new RouteAction(routeInfo, controller);
+		var isScopeOwnedByRouteAction = false;
+		try
+		{
+			var controller = scope.ServiceProvider.GetService(controllerType);
+			if (controller != null)
+			{
+				var routeAction = new RouteAction(routeInfo, controller, scope);
+				isScopeOwnedByRouteAction = true;
+				return routeAction;
+			}
+			return null;
+		}
+		finally
+		{
+			if (!isScopeOwnedByRouteAction)
+			{
+				await new AsyncServiceScope(scope).DisposeAsync().ConfigureAwait(false);
+			}
+		}
 	}
 
 	protected async Task<ServiceActionResultInfo> GetActionResultWithRouteActionAsync(
@@ -1711,12 +1732,6 @@ public class BrServiceMiddleware : MiddlewareAsync
 			return;
 		}
 
-		var serviceConfig = Config;
-		if (serviceConfig.RequestStatisticsInLiveSeconds <= 0)
-		{
-			return;
-		}
-
 		// ⏱⏱⏱，【计时埋点】
 		requestPipeTimeInfo.SetTime_0_ToAddRequestBytesToNeedProcessQueue(
 			timeOfReceiveData
@@ -1875,10 +1890,11 @@ public class BrServiceMiddleware : MiddlewareAsync
 					Error = Error.OperationNotImplemented,
 					ErrorDescription = $"制定路径（{httpContext.Request.Path.Value}）对应的服务未实现。"
 				};
-				await socketToClient.SendObjectAsync(pathNotExistingResponse, CancellationToken.None);
+				await socketToClient.ExecuteWithTimeoutAsync(token => socketToClient.SendObjectAsync(pathNotExistingResponse, token),
+				WebServiceConfig.WebSocketSendTimeoutSeconds, httpContext.RequestAborted);
 				// !!!
-				await socketToClient.CloseAsync(
-					WebSocketCloseStatus.NormalClosure, pathNotExistingResponse.ErrorDescription, CancellationToken.None);
+				await socketToClient.CloseWithTimeoutAsync(WebSocketCloseStatus.NormalClosure, pathNotExistingResponse.ErrorDescription,
+					WebServiceConfig.WebSocketCloseTimeoutSeconds, httpContext.RequestAborted);
 				// !!!
 				return true;
 			}
@@ -1892,10 +1908,11 @@ public class BrServiceMiddleware : MiddlewareAsync
 				Error = Error.ObjectNotExisted,
 				ErrorDescription = $"要访问的路径（{webSocketRequestPath}）不存在。"
 			};
-			await socketToClient.SendObjectAsync(pathNotExistingResponse, CancellationToken.None);
+			await socketToClient.ExecuteWithTimeoutAsync(token => socketToClient.SendObjectAsync(pathNotExistingResponse, token),
+				WebServiceConfig.WebSocketSendTimeoutSeconds, httpContext.RequestAborted);
 			// !!!
-			await socketToClient.CloseAsync(
-				WebSocketCloseStatus.NormalClosure, pathNotExistingResponse.ErrorDescription, CancellationToken.None);
+			await socketToClient.CloseWithTimeoutAsync(WebSocketCloseStatus.NormalClosure, pathNotExistingResponse.ErrorDescription,
+				WebServiceConfig.WebSocketCloseTimeoutSeconds, httpContext.RequestAborted);
 			// !!!
 			return true;
 		}
@@ -1906,8 +1923,8 @@ public class BrServiceMiddleware : MiddlewareAsync
 		if (IsServiceShuttingDown)
 		{
 			// !!!
-			await socketToClient.CloseAsync(WebSocketCloseStatus.EndpointUnavailable,
-				SocketCloseStatusDescription.ServiceInfo_EndpointUnavailable_ServiceShutdown, CancellationToken.None);
+			await socketToClient.CloseWithTimeoutAsync(WebSocketCloseStatus.EndpointUnavailable,
+				SocketCloseStatusDescription.ServiceInfo_EndpointUnavailable_ServiceShutdown, WebServiceConfig.WebSocketCloseTimeoutSeconds, httpContext.RequestAborted);
 			// !!!
 			return true;
 		}
@@ -1944,7 +1961,7 @@ public class BrServiceMiddleware : MiddlewareAsync
 		string? webSocketCloseStatusDescriptionByService = null;
 		WebSocketCloseStatus? webSocketCloseStatusByClient = null;
 		string? webSocketCloseStatusDescriptionByClient = null;
-		CancellationTokenSource applicationRegisterCancelTokenSource = new();
+		using CancellationTokenSource applicationRegisterCancelTokenSource = new();
 		var applicationRegisterCancelToken = applicationRegisterCancelTokenSource.Token;
 		try
 		{
@@ -2042,7 +2059,7 @@ public class BrServiceMiddleware : MiddlewareAsync
 			}
 
 			// !!! 服务中的方法名称（methodName），对应HTTP请求中的请求路径 !!!
-			using var routeAction = GetRouteActionWithRequestUriPath(methodName);
+			await using var routeAction = await GetRouteActionWithRequestUriPathAsync(methodName);
 			if (routeAction == null)
 			{
 				// !!! 应用程序信息无效 !!!
@@ -2114,13 +2131,13 @@ public class BrServiceMiddleware : MiddlewareAsync
 			////////////////////////////////////////////////
 			if (webSocketCloseStatusByClient != null)
 			{
-				await socketToClient.TryToCloseAsync(
-					webSocketCloseStatusByClient.Value, webSocketCloseStatusDescriptionByClient, CancellationTokenSource.Token);
+				await socketToClient.CloseWithTimeoutAsync(webSocketCloseStatusByClient.Value, webSocketCloseStatusDescriptionByClient,
+					WebServiceConfig.WebSocketCloseTimeoutSeconds, CancellationTokenSource.Token);
 			}
 			else if (webSocketCloseStatusByService != null)
 			{
-				await socketToClient.TryToCloseAsync(webSocketCloseStatusByService.Value,
-					webSocketCloseStatusDescriptionByService, CancellationTokenSource.Token);
+				await socketToClient.CloseWithTimeoutAsync(webSocketCloseStatusByService.Value, webSocketCloseStatusDescriptionByService,
+					WebServiceConfig.WebSocketCloseTimeoutSeconds, CancellationTokenSource.Token);
 			}
 		}
 		////////////////////////////////////////////////
@@ -2141,9 +2158,9 @@ public class BrServiceMiddleware : MiddlewareAsync
 			if (clientConnectionInfo.TryAddSocket(socketToClient, clientIpInfo, out socketInfoToClient) != true)
 			{
 				////////////////////////////////////////////////
-				await socketToClient.TryToCloseAsync(WebSocketCloseStatus.PolicyViolation,
+				await socketToClient.CloseWithTimeoutAsync(WebSocketCloseStatus.PolicyViolation,
 					SocketCloseStatusDescription.ApplicationInfo_PolicyViolation_TooManyConnections,
-					CancellationTokenSource.Token);
+					WebServiceConfig.WebSocketCloseTimeoutSeconds, CancellationTokenSource.Token);
 				////////////////////////////////////////////////
 				// ⏱⏱⏱，【状态标记】
 				clientOpenConnectApiRequestPipeTimeInfo.State = RequestPipeState.Failed;
@@ -2285,11 +2302,8 @@ public class BrServiceMiddleware : MiddlewareAsync
 						SocketCloseStatusDescription.ServiceInfo_EndpointUnavailable_UnexpectedCloseOperation;
 				}
 				// !!!
-				await socketToClient.TryToCloseAsync(
-					closeStatus,
-					closeStatusDescription,
-					clientConnectionInfo.CancellationTokenSource.Token
-				);
+				await socketToClient.CloseWithTimeoutAsync(closeStatus, closeStatusDescription,
+					WebServiceConfig.WebSocketCloseTimeoutSeconds, clientConnectionInfo.CancellationTokenSource.Token);
 				//
 				Interlocked.Increment(ref _totalSocketsToClientCountClosed);
 				// !!!
@@ -2334,6 +2348,26 @@ public class BrServiceMiddleware : MiddlewareAsync
 			return null;
 		}
 
+		var routeActionsCreated = new List<RouteAction>();
+		await using var routeActionsCleanup = new CodesAtFunctionEnd(async () =>
+		{
+			List<Exception>? disposeExceptions = null;
+			for (var index = routeActionsCreated.Count - 1; index >= 0; index--)
+			{
+				try
+				{
+					await routeActionsCreated[index].DisposeAsync();
+				}
+				catch (Exception exception)
+				{
+					(disposeExceptions ??= []).Add(exception);
+				}
+			}
+			if (disposeExceptions != null)
+			{
+				throw new AggregateException("释放请求控制器作用域失败。", disposeExceptions);
+			}
+		});
 		ApiResponseInfoAbstract? apiResponseInfo = null;
 		var apiResponseEncryptionMethod = DataPackageEncryptionMethod.None;
 		string apiResponseAesKey =
@@ -2441,9 +2475,11 @@ public class BrServiceMiddleware : MiddlewareAsync
 				}
 				else
 				{
-					routeAction = GetRouteActionWithRequestUriPath(
-						apiRequestInfo.MethodName
-					);
+					routeAction = await GetRouteActionWithRequestUriPathAsync(apiRequestInfo.MethodName);
+					if (routeAction != null)
+					{
+						routeActionsCreated.Add(routeAction);
+					}
 				}
 				// ⏱⏱⏱，【计时埋点】
 				apiRequestInfo.ServiceRequestPipeTimeInfo?.SetTime_3_ToCreateResponseObject();
@@ -2453,9 +2489,11 @@ public class BrServiceMiddleware : MiddlewareAsync
 				// 1/2，获取“ApiResponseInfo”：
 				////////////////////////////////////////////////
 				// IActionResult? actionResult = null;
-				RouteAction? nextRouteAction = null;
+				var redirectUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { apiRequestInfo.MethodName ?? string.Empty };
+				RouteAction? nextRouteAction;
 				do
 				{
+					nextRouteAction = null;
 					var routeActionInvokeResultInfo = await GetActionResultWithRouteActionAsync(
 						routeAction, apiRequestInfo, controllerSpecified);
 					var routeActionInvokeResult = routeActionInvokeResultInfo.Result;
@@ -2472,14 +2510,22 @@ public class BrServiceMiddleware : MiddlewareAsync
 						apiResponseInfo = routeActionInvokeResult.ToApiResponseInfo(requestIdentity, out var actionRedirectUrl);
 						if (apiResponseInfo == null && !string.IsNullOrEmpty(actionRedirectUrl))
 						{
-							nextRouteAction = GetRouteActionWithRequestUriPath(actionRedirectUrl);
-							if (nextRouteAction?.RouteInfo.Equals(routeAction?.RouteInfo) == true)
+							if (!redirectUrls.Add(actionRedirectUrl) || redirectUrls.Count > 32)
 							{
-								// actionResult = redirectResult;
 								apiResponseInfo = new ApiResponseInfo<string>(requestIdentity)
 								{
 									StatusCode = (int)System.Net.HttpStatusCode.LoopDetected
 								};
+							}
+							else
+							{
+								nextRouteAction = await GetRouteActionWithRequestUriPathAsync(actionRedirectUrl);
+								if (nextRouteAction != null)
+								{
+									routeActionsCreated.Add(nextRouteAction);
+									routeAction = nextRouteAction;
+									controllerSpecified = null;
+								}
 							}
 						}
 					}
@@ -2531,17 +2577,10 @@ public class BrServiceMiddleware : MiddlewareAsync
 		if (socketToClientSpecified != null)
 		{
 			var serviceConfig = Config;
-			await socketToClientSpecified.SendApiResponseInfoAsync(
-				apiResponseInfo,
-				//
-				serviceConfig.ServiceResponseTextEncoding,
-				apiResponseEncryptionMethod,
-				apiResponseAesKey,
-				serviceConfig.ServiceResponseDataPacketSizeToCompression,
-				serviceConfig.ServiceResponseDataPacketCompressionMethodName,
-				//
-				cancellationToken
-			);
+			await socketToClientSpecified.ExecuteWithTimeoutAsync(token => socketToClientSpecified.SendApiResponseInfoAsync(
+				apiResponseInfo, serviceConfig.ServiceResponseTextEncoding, apiResponseEncryptionMethod, apiResponseAesKey,
+				serviceConfig.ServiceResponseDataPacketSizeToCompression, serviceConfig.ServiceResponseDataPacketCompressionMethodName, token),
+				WebServiceConfig.WebSocketSendTimeoutSeconds, cancellationToken);
 			// !!!
 			Interlocked.Increment(ref _totalResponsesCountSend);
 			// !!!
@@ -3223,35 +3262,25 @@ public class BrServiceMiddleware : MiddlewareAsync
 			// 1/5，清理数据：
 			////////////////////////////////////////////////
 			var requestStatisticsInLiveSeconds = Config.RequestStatisticsInLiveSeconds;
-			var requestStatisticsCreateTimMin = DateTime.Now.AddSeconds(
-				-1 * requestStatisticsInLiveSeconds
-			);
-			if (requestStatisticsInLiveSeconds > 0)
+			if (requestStatisticsInLiveSeconds <= 0)
 			{
-				for (
-					var requestStatisticsInfoIndex = 0;
-					requestStatisticsInfoIndex
-						< _requestStatisticsInfesOrderedByRequestTimeAsc.Count;
-					requestStatisticsInfoIndex++
-				)
+				_requestPipeTimeInfes.Clear();
+				_requestStatisticsInfesOrderedByRequestTimeAsc.Clear();
+				_requestStatisticsInfesOrderedByRequestTimeAsc.TrimExcess();
+				RequestStatisticsInfesOrderedByRequestTimeAsc = [];
+				LoadRate = ToGetServiceLoadRate?.Invoke() ?? 0;
+				return;
+			}
+			var requestStatisticsCreateTimMin = DateTime.Now.AddSeconds(-requestStatisticsInLiveSeconds);
+			// 不依赖聚合记录的到达顺序，清除窗口外的全部记录。
+			var expiredStatisticsCount = _requestStatisticsInfesOrderedByRequestTimeAsc.RemoveAll(
+				info => info.StatisticsInSecondTime.IsEarlierInSecond(requestStatisticsCreateTimMin));
+			var isStatisticsChanged = expiredStatisticsCount > 0;
+			if (expiredStatisticsCount > 0)
+			{
+				if (_requestStatisticsInfesOrderedByRequestTimeAsc.Capacity > Math.Max(1024L, 2L * _requestStatisticsInfesOrderedByRequestTimeAsc.Count))
 				{
-					var requestStatisticsInfo =
-						_requestStatisticsInfesOrderedByRequestTimeAsc[
-							requestStatisticsInfoIndex
-						];
-					if (
-						requestStatisticsInfo.StatisticsInSecondTime.IsEarlierInSecond(
-							requestStatisticsCreateTimMin
-						)
-					)
-					{
-						// 清理已过期的统计信息。
-						_requestStatisticsInfesOrderedByRequestTimeAsc.RemoveRange(
-							0,
-							requestStatisticsInfoIndex
-						);
-						break;
-					}
+					_requestStatisticsInfesOrderedByRequestTimeAsc.TrimExcess();
 				}
 			}
 
@@ -3280,6 +3309,13 @@ public class BrServiceMiddleware : MiddlewareAsync
 				var requestPipeTimeInfoType = requestPipeTimeInfo.Type;
 				var requestPipeStartTime = requestPipeTimeInfo.StartTime;
 				var requestPipeCompletedTime = requestPipeTimeInfo.CompletedTime;
+				var isRequestStartInWindow = !requestPipeStartTime.IsEarlierInSecond(requestStatisticsCreateTimMin);
+				var isResponseEndInWindow = !requestPipeCompletedTime.IsEarlierInSecond(requestStatisticsCreateTimMin);
+				if (!isRequestStartInWindow && !isResponseEndInWindow)
+				{
+					continue;
+				}
+				isStatisticsChanged = true;
 				ServiceRequestStatisticsInfo? requestStatisticsInfoForRequestBeginTime =
 					null;
 				ServiceRequestStatisticsInfo? requestStatisticsInfoForResponseEndTime =
@@ -3289,7 +3325,7 @@ public class BrServiceMiddleware : MiddlewareAsync
 				////////////////////////////////////////////////
 				for (var requestStatisticsInfoIndex = _requestStatisticsInfesOrderedByRequestTimeAsc.Count - 1;
 					// 注意这里是“>= -1”。
-					requestStatisticsInfoIndex >= -1;
+					isRequestStartInWindow && requestStatisticsInfoIndex >= -1;
 					requestStatisticsInfoIndex--)
 				{
 					var requestStatisticsInfoExisted = requestStatisticsInfoIndex >= 0
@@ -3344,7 +3380,7 @@ public class BrServiceMiddleware : MiddlewareAsync
 				///////////////////////////////////////////////
 				for (var requestStatisticsInfoIndex = _requestStatisticsInfesOrderedByRequestTimeAsc.Count - 1;
 					// 注意这里是“>= -1”。
-					requestStatisticsInfoIndex >= -1; requestStatisticsInfoIndex--)
+					isResponseEndInWindow && requestStatisticsInfoIndex >= -1; requestStatisticsInfoIndex--)
 				{
 					var requestStatisticsInfoExisted = requestStatisticsInfoIndex >= 0
 							? _requestStatisticsInfesOrderedByRequestTimeAsc[requestStatisticsInfoIndex]
@@ -3393,29 +3429,31 @@ public class BrServiceMiddleware : MiddlewareAsync
 							// !!!
 						}
 					}
+					if (requestStatisticsInfoForResponseEndTime != null)
+					{
+						break;
+					}
 				}
 
 				////////////////////////////////////////////////
 				requestStatisticsInfoForRequestBeginTime?.AddRequest(
 					requestPipeTimeInfo
 				);
-				requestStatisticsInfoForResponseEndTime?.AddRequest(
-					requestPipeTimeInfo
-				);
+				if (!ReferenceEquals(requestStatisticsInfoForRequestBeginTime, requestStatisticsInfoForResponseEndTime))
+				{
+					requestStatisticsInfoForResponseEndTime?.AddRequest(requestPipeTimeInfo);
+				}
 				////////////////////////////////////////////////
 			}
 
 			////////////////////////////////////////////////
 			// 3/5，更新只读的统计数据：
 			////////////////////////////////////////////////
-			var requestStatisticsInfesOrderedByRequestTimeAsc =
-				_requestStatisticsInfesOrderedByRequestTimeAsc.ToArray();
+			if (isStatisticsChanged)
 			{
-				// !!!
-				RequestStatisticsInfesOrderedByRequestTimeAsc =
-					requestStatisticsInfesOrderedByRequestTimeAsc;
-				// !!!
+				RequestStatisticsInfesOrderedByRequestTimeAsc = _requestStatisticsInfesOrderedByRequestTimeAsc.ToArray();
 			}
+			var requestStatisticsInfesOrderedByRequestTimeAsc = RequestStatisticsInfesOrderedByRequestTimeAsc;
 
 			////////////////////////////////////////////////
 			// 4/5，尝试更新服务的当前负载：

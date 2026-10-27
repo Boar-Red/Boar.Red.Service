@@ -1,0 +1,57 @@
+namespace Boar.Red.Service.MemoryTests;
+
+public class AsyncScopedProbe : IAsyncDisposable
+{
+	////////////////////////////////////////////////
+	// @静态变量
+	////////////////////////////////////////////////
+
+	#region 静态变量
+
+	public static int Created;
+
+	public static int Disposed;
+
+	#endregion
+
+
+	////////////////////////////////////////////////
+	// @自身属性
+	////////////////////////////////////////////////
+
+	#region 自身属性
+
+	public bool IsDisposed { get; private set; }
+
+	#endregion
+
+
+	////////////////////////////////////////////////
+	// @自身实现
+	////////////////////////////////////////////////
+
+	#region 自身实现
+
+	public AsyncScopedProbe()
+	{
+		Created++;
+	}
+
+	#endregion
+
+
+	////////////////////////////////////////////////
+	// @实现“IAsyncDisposable”
+	////////////////////////////////////////////////
+
+	#region 实现“IAsyncDisposable”
+
+	public async ValueTask DisposeAsync()
+	{
+		await Task.Yield();
+		IsDisposed = true;
+		Disposed++;
+	}
+
+	#endregion
+}

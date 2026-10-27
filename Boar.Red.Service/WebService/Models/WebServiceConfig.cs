@@ -126,6 +126,21 @@ public class WebServiceConfig
 	public double WebSocketKeepAliveIntervalSeconds { get; set; } = 1.0;
 
 	/// <summary>
+	/// WebSocket保活Ping等待Pong的超时秒数，默认为30秒；小于等于0时保留不检查Pong超时的行为。
+	/// </summary>
+	public double WebSocketKeepAliveTimeoutSeconds { get; set; } = 30.0;
+
+	/// <summary>
+	/// WebSocket单次发送的超时秒数，默认为30秒；无效值使用默认值，超时后中断连接。
+	/// </summary>
+	public double WebSocketSendTimeoutSeconds { get; set; } = 30.0;
+
+	/// <summary>
+	/// WebSocket关闭握手的超时秒数，默认为5秒；无效值使用默认值，超时后中断连接。
+	/// </summary>
+	public double WebSocketCloseTimeoutSeconds { get; set; } = 5.0;
+
+	/// <summary>
 	/// WebSocket连接的“鉴权截止时限”秒数：连接建立后，必须在此时限内完成鉴权，
 	/// 否则视为无效连接，由服务端主动断开。
 	/// </summary>

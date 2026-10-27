@@ -285,6 +285,12 @@ public static class WebServiceExtension
 			{
 				webSocketOptions.KeepAliveInterval = TimeSpan.FromSeconds(keepAliveIntervalSeconds);
 			}
+			var keepAliveTimeoutSeconds = webServiceConfig.WebSocketKeepAliveTimeoutSeconds;
+			if (double.IsFinite(keepAliveTimeoutSeconds) && keepAliveTimeoutSeconds > 0)
+			{
+				// Ping/Pong超时会中断失效连接，避免主动Pong持续积压在发送锁上。
+				webSocketOptions.KeepAliveTimeout = TimeSpan.FromSeconds(keepAliveTimeoutSeconds);
+			}
 		}
 		application.UseWebSockets(webSocketOptions);
 
